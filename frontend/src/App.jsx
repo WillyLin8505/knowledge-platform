@@ -1,0 +1,65 @@
+import { useState } from 'react';
+import SearchInput from './components/SearchInput.jsx';
+import CategorySection from './components/CategorySection.jsx';
+
+export default function App() {
+  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [result, setResult] = useState(null);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  async function handleSearch(topic) {
+    setStatus('loading');
+    setResult(null);
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || '伺服器發生錯誤');
+      }
+      const data = await res.json();
+      setResult(data);
+      setStatus('done');
+    } catch (err) {
+      setErrorMsg(err.message);
+      setStatus('error');
+    }
+  }
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>知識學習平台</h1>
+        <p className="subtitle">輸入任何你想學習的領域，AI 幫你整理必備專有名詞</p>
+      </header>
+
+      <SearchInput onSearch={handleSearch} disabled={status === 'loading'} />
+
+      {status === 'loading' && (
+        <div className="loading">
+          <div className="spinner" />
+          <span>Claude 分析中，請稍候…</span>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="error-box">
+          <strong>發生錯誤：</strong> {errorMsg}
+        </div>
+      )}
+
+      {status === 'done' && result && (
+        <div className="result">
+          <h2 className="result-topic">「{result.topic}」的核心專有名詞</h2>
+          {result.categories.map((cat, i) => (
+            <CategorySection key={i} category={cat} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
