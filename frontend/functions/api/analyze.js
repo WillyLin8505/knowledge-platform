@@ -58,7 +58,11 @@ export async function onRequestPost(context) {
   }
 
   try {
-    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+    // 支援 OAuth token（Claude CLI）或一般 API Key
+    const isOAuth = env.ANTHROPIC_API_KEY?.startsWith('sk-ant-oat');
+    const client = isOAuth
+      ? new Anthropic({ authToken: env.ANTHROPIC_API_KEY })
+      : new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
     const message = await client.messages.create({
       model: 'claude-opus-4-8',
