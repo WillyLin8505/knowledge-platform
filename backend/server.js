@@ -1,13 +1,19 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import Anthropic from '@anthropic-ai/sdk';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getClaudeClient() {
+  const creds = JSON.parse(
+    fs.readFileSync(`${process.env.HOME}/.claude/.credentials.json`, 'utf8')
+  );
+  const token = creds.claudeAiOauth.accessToken;
+  return new Anthropic({ authToken: token });
+}
 
 const OUTPUT_SCHEMA = {
   type: 'object',
@@ -51,7 +57,8 @@ app.post('/api/analyze', async (req, res) => {
   }
 
   try {
-    const stream = client.messages.stream({
+    const client = getClaudeClient();
+    const message = await client.messages.create({
       model: 'claude-opus-4-8',
       max_tokens: 4096,
       thinking: { type: 'adaptive' },
@@ -77,7 +84,6 @@ app.post('/api/analyze', async (req, res) => {
       },
     });
 
-    const message = await stream.finalMessage();
     const text = message.content.find((b) => b.type === 'text')?.text ?? '{}';
     const data = JSON.parse(text);
     res.json(data);
