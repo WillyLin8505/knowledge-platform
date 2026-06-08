@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { catId } from './CategorySection.jsx';
+import { termId } from './TermCard.jsx';
 
 function ChevronIcon({ open }) {
   return (
@@ -15,14 +17,28 @@ function ChevronIcon({ open }) {
 function TopicEntry({ item, isActive, onSelect, onDelete }) {
   const [open, setOpen] = useState(isActive);
 
+  function handleTopicClick() {
+    onSelect(item, null);
+    setOpen(true);
+  }
+
+  function handleCatClick(cat) {
+    onSelect(item, catId(cat.name));
+    setOpen(true);
+  }
+
+  function handleTermClick(term) {
+    onSelect(item, termId(term.term));
+    setOpen(true);
+  }
+
   return (
     <div className={`sidebar-item ${isActive ? 'sidebar-item--active' : ''}`}>
-      {/* Topic row */}
       <div className="sidebar-topic-row">
         <button className="sidebar-chevron" onClick={() => setOpen((o) => !o)}>
           <ChevronIcon open={open} />
         </button>
-        <button className="sidebar-topic" onClick={() => { onSelect(item); setOpen(true); }}>
+        <button className="sidebar-topic" onClick={handleTopicClick}>
           {item.topic}
         </button>
         <button
@@ -32,17 +48,18 @@ function TopicEntry({ item, isActive, onSelect, onDelete }) {
         >×</button>
       </div>
 
-      {/* Categories + terms */}
       {open && (
         <div className="sidebar-tree">
           {item.categories.map((cat, ci) => (
             <div key={ci} className="sidebar-cat-group">
-              <div className="sidebar-cat-name">{cat.name}</div>
+              <button className="sidebar-cat-name" onClick={() => handleCatClick(cat)}>
+                {cat.name}
+              </button>
               {cat.terms.map((term, ti) => (
-                <div key={ti} className="sidebar-term">
+                <button key={ti} className="sidebar-term" onClick={() => handleTermClick(term)}>
                   {term.term}
                   {term.english && <span className="sidebar-term-en"> {term.english}</span>}
-                </div>
+                </button>
               ))}
             </div>
           ))}

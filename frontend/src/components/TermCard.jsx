@@ -1,6 +1,10 @@
+export function termId(termName) {
+  return 'term-' + termName.replace(/\s+/g, '-').replace(/[^\w一-鿿-]/g, '');
+}
+
 export default function TermCard({ term }) {
   return (
-    <div className="term-card">
+    <div className="term-card" id={termId(term.term)}>
       <div className="term-title">
         <span className="term-zh">{term.term}</span>
         {term.english && <span className="term-en">{term.english}</span>}

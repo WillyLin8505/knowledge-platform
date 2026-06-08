@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SearchInput from './components/SearchInput.jsx';
 import CategorySection from './components/CategorySection.jsx';
 import Sidebar from './components/Sidebar.jsx';
@@ -20,6 +20,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [history, setHistory] = useState(loadHistory);
   const [activeId, setActiveId] = useState(null);
+  const pendingScroll = useRef(null);
 
   useEffect(() => { saveHistory(history); }, [history]);
 
@@ -57,11 +58,32 @@ export default function App() {
     }
   }
 
-  function handleSidebarSelect(item) {
+  function scrollTo(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function handleSidebarSelect(item, scrollTargetId = null) {
+    const alreadyLoaded = result?.topic === item.topic;
     setResult(item);
     setStatus('done');
     setActiveId(item.id);
+    if (scrollTargetId) {
+      if (alreadyLoaded) {
+        setTimeout(() => scrollTo(scrollTargetId), 50);
+      } else {
+        pendingScroll.current = scrollTargetId;
+      }
+    }
   }
+
+  useEffect(() => {
+    if (status === 'done' && pendingScroll.current) {
+      const id = pendingScroll.current;
+      pendingScroll.current = null;
+      setTimeout(() => scrollTo(id), 100);
+    }
+  }, [status, result]);
 
   function handleSidebarDelete(id) {
     setHistory((prev) => prev.filter((h) => h.id !== id));
@@ -75,6 +97,7 @@ export default function App() {
         activeId={activeId}
         onSelect={handleSidebarSelect}
         onDelete={handleSidebarDelete}
+        currentTopic={result?.topic}
       />
 
       <main className="main">
